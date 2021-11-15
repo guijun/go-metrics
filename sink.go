@@ -83,6 +83,7 @@ type sinkURLFactoryFunc func(*url.URL) (MetricSink, error)
 var sinkRegistry = map[string]sinkURLFactoryFunc{
 	"statsd":   NewStatsdSinkFromURL,
 	"statsite": NewStatsiteSinkFromURL,
+	"graphite": NewGraphiteSinkFromURL,
 	"inmem":    NewInmemSinkFromURL,
 }
 
