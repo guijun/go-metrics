@@ -1,4 +1,5 @@
 package metrics
+
 //TODO 参照 协议 https://github.com/cyberdelia/go-metrics-graphite/blob/39f87cc3b432bbb898d7c643c0e93cac2bc865ad/graphite.go
 import (
 	"bytes"
@@ -53,9 +54,9 @@ func (s *GraphitedSink) SetGauge(key []string, val float32) {
 
 func (s *GraphitedSink) SetGaugeWithLabels(key []string, val float32, labels []Label) {
 	now := time.Now().Unix()
-	flatKey := s.flattenKeyLabels(key, labels)
+	flatKey, label := s.flattenKeyLabels(key, labels)
 	//	s.pushMetric(fmt.Sprintf("%s:%f|g\n", flatKey, val))
-	s.pushMetric(fmt.Sprintf("%s.value %f %d\n", flatKey, val, now))
+	s.pushMetric(fmt.Sprintf("%s.value;%s %f %d\n", flatKey, label, val, now))
 }
 
 func (s *GraphitedSink) EmitKey(key []string, val float32) {
@@ -74,23 +75,23 @@ func (s *GraphitedSink) IncrCounter(key []string, val float32) {
 
 func (s *GraphitedSink) IncrCounterWithLabels(key []string, val float32, labels []Label) {
 	now := time.Now().Unix()
-	flatKey := s.flattenKeyLabels(key, labels)
+	flatKey, label := s.flattenKeyLabels(key, labels)
 	//s.pushMetric(fmt.Sprintf("%s:%f|c\n", flatKey, val))
-	s.pushMetric(fmt.Sprintf("%s.count %d %d\n", flatKey, int(val), now))
+	s.pushMetric(fmt.Sprintf("%s.count;%s %d %d\n", flatKey, label, int(val), now))
 }
 
 func (s *GraphitedSink) AddSample(key []string, val float32) {
 	now := time.Now().Unix()
 	flatKey := s.flattenKey(key)
-//	s.pushMetric(fmt.Sprintf("%s:%f|ms\n", flatKey, val))
+	//	s.pushMetric(fmt.Sprintf("%s:%f|ms\n", flatKey, val))
 	s.pushMetric(fmt.Sprintf("%s.sample %d %d\n", flatKey, int(val), now))
 }
 
 func (s *GraphitedSink) AddSampleWithLabels(key []string, val float32, labels []Label) {
 	now := time.Now().Unix()
-	flatKey := s.flattenKeyLabels(key, labels)
-//	s.pushMetric(fmt.Sprintf("%s:%f|ms\n", flatKey, val))
-	s.pushMetric(fmt.Sprintf("%s.sample %d %d\n", flatKey, int(val), now))
+	flatKey, label := s.flattenKeyLabels(key, labels)
+	//	s.pushMetric(fmt.Sprintf("%s:%f|ms\n", flatKey, val))
+	s.pushMetric(fmt.Sprintf("%s.sample;%s %d %d\n", flatKey, label, int(val), now))
 }
 
 // Flattens the key for formatting, removes spaces
@@ -109,11 +110,17 @@ func (s *GraphitedSink) flattenKey(parts []string) string {
 }
 
 // Flattens the key along with labels for formatting, removes spaces
-func (s *GraphitedSink) flattenKeyLabels(parts []string, labels []Label) string {
+func (s *GraphitedSink) flattenKeyLabels(parts []string, labels []Label) (rKeys string, rlabels string) {
+	rKeys = s.flattenKey(parts)
+
+	var lbls []string
 	for _, label := range labels {
-		parts = append(parts, label.Value)
+		lbls = append(lbls, fmt.Sprintf("%v=%v", label.Name, label.Value))
 	}
-	return s.flattenKey(parts)
+	if len(lbls) > 0 {
+		rlabels = strings.Join(lbls, ";")
+	}
+	return
 }
 
 // Does a non-blocking push to the metrics queue
