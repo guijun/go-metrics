@@ -5,7 +5,7 @@ package circonus
 import (
 	"strings"
 
-	"github.com/armon/go-metrics"
+	"github.com/guijun/go-metrics"
 	cgm "github.com/circonus-labs/circonus-gometrics"
 )
 
